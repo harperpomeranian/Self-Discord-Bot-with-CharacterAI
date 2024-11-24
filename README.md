@@ -1,4 +1,4 @@
-# Discord Self Bot with Character AI
+# Self Discord Bot with Character AI
 
 Simple setup, just define your variables in .env and you'll be done!
 
