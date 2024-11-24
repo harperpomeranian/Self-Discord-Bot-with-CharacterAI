@@ -19,7 +19,9 @@ cai_chat = None
 cai_me = None
 discord2cai: dict[str, dict[str, str]] = {}
 
+# Other
 is_message_processing = False
+channel_whitelist = []
 
 # Be noteful when changing this
 MESSAGE_SUFFIX = '\n-# This message was made with AI'
@@ -31,6 +33,9 @@ async def on_ready() -> None:
 @dc_client.event
 async def on_message(message: discord.Message) -> None:
     global is_message_processing, character_id, character_name
+    if message.channel.id not in channel_whitelist and len(channel_whitelist) > 0:
+        return
+    
     if message.author == dc_client.user or not (isinstance(message.channel, (discord.channel.DMChannel)) or dc_client.user in message.mentions):
         # Custom commands
         from_me = message.author == dc_client.user
@@ -41,11 +46,19 @@ async def on_message(message: discord.Message) -> None:
             await sleep(1)
             await message.delete()
             await reply_message.delete()
+        elif message.content.startswith('!refresh') and from_me:
+            if file_exists('channel_whitelist.json'):
+                channel_whitelist = json.load(open('channel_whitelist.json', 'r'))
+                reply_message = await message.reply('Channel whitelist refreshed!')
+            else:
+                reply_message = await message.reply("There isn't a whitelist file!")
+            await sleep(1)
+            await reply_message.delete()
         return
     
     print(f'Loading message history of {message.channel}...')
     previous_messages: list[str] = []
-    async for msg in message.channel.history(limit=20):
+    async for msg in message.channel.history():
         if msg.author != dc_client.user:
             previous_messages.append(f'{msg.author.name}: {await fix_message_content(msg.content)}')
         elif msg.content.endswith(MESSAGE_SUFFIX):
@@ -122,7 +135,7 @@ async def load_char(char_id: str):
     character_id = char_id
     
 async def main() -> None:
-    global cai_client, cai_chat, cai_me, character_name, discord2cai
+    global cai_client, cai_chat, cai_me, character_name, discord2cai, channel_whitelist
     
     # Login and setup CharacterAI
     cai_client = aiocai.Client(getenv('CHARACTER_AI_TOKEN'))
@@ -130,8 +143,12 @@ async def main() -> None:
     cai_chat = await cai_client.connect()
     await load_char(character_id)
     print('CharacterAI Bot:', character_name)
+    
     if file_exists('dc2cai.json'):
         discord2cai = json.load(open('dc2cai.json', 'r'))
+        
+    if file_exists('channel_whitelist.json'):
+        channel_whitelist = json.load(open('channel_whitelist.json', 'r'))
     
     # Start Self-Discord Bot
     await create_task(dc_client.start(getenv('DISCORD_TOKEN')))

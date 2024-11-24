@@ -164,3 +164,4 @@ cython_debug/
 # Others
 tests/
 dc2cai.json
+channel_whitelist.json
