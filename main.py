@@ -71,13 +71,18 @@ async def on_message(message: discord.Message) -> None:
     # Put the history loading here so the AI won't get confused
     print(f'Loading History of {message.channel.name}')
     previous_messages: list[str] = []
-    async for msg in message.channel.history():
-        if msg.author != dc_client.user:
-            previous_messages.append(f'{msg.author.name}: {await fix_message_content(msg.content)}')
-        elif msg.content.endswith(MESSAGE_SUFFIX):
+    async for msg in message.channel.history(limit=20):
+        if msg.content.endswith(MESSAGE_SUFFIX) and msg.author == dc_client.user:
             previous_messages.append(f'{character_name}: {msg.content.replace(MESSAGE_SUFFIX, "")}')
+        else:
+            previous_messages.append(f'{msg.author.name}: {await fix_message_content(msg.content)}')
     
-    previous_messages.insert(0, '\nSend <no reply> if you don\'t want to reply')
+    # Giving the ai more context
+    referenced_message = message.reference if message.reference else None
+    if referenced_message and referenced_message.resolved.author == dc_client.user:
+        previous_messages.insert(1, f'{character_name}: {referenced_message.resolved.content.replace(MESSAGE_SUFFIX, "")}')
+        
+    previous_messages.append(f'=== (DISCORD NOTICE: Below is the chat history of #{message.channel.name}. Specifically send "<no reply>" to not reply or to leave them on seen.) ===')
     previous_messages = reversed(previous_messages)
     
     # Prevent the AI from overloading
@@ -91,8 +96,25 @@ async def on_message(message: discord.Message) -> None:
     
     print(f'Randomly waiting for {random_wait_time}s...')
     await sleep(random_wait_time)
-    async with message.channel.typing():
-        await message.reply(await reply_to_discord(message, previous_messages) + MESSAGE_SUFFIX)
+    async with message.channel.typing():  # TODO: Update somehow
+        cai_response: str = await reply_to_discord(message, previous_messages)
+        if '<no reply>' in cai_response:
+            print('No reply')
+            return
+        await message.reply(cai_response + MESSAGE_SUFFIX)
+
+async def reply_to_discord(message: discord.Message, message_history: list[str]) -> str:
+    global is_generating_reply
+    
+    is_generating_reply = True
+    print(f'Replying to `{message.content}`...')
+    
+    new_chat, _ = await cai_chat.new_chat(character_id, cai_me.id)
+    await sleep(.5)  # Prevent `comment` problem
+    sent_message = await cai_chat.send_message(character_id, new_chat.chat_id, '\n'.join(message_history))
+    
+    is_generating_reply = False
+    return sent_message.text
 
 async def fix_message_content(message: str) -> str:
     # Replace discord user ids with actual usernames
@@ -119,20 +141,7 @@ async def fix_message_content(message: str) -> str:
         
         message = message.replace(f'<#{channel_id}>', channel_name)
     
-    return message
-
-async def reply_to_discord(message: discord.Message, message_history: list[str]) -> str:
-    global is_generating_reply
-    
-    is_generating_reply = True
-    print(f'Replying to `{message.content}`...')
-    
-    new_chat, _ = await cai_chat.new_chat(character_id, cai_me.id)
-    # await sleep(.5)  # Prevent `comment` problem
-    sent_message = await cai_chat.send_message(character_id, new_chat.chat_id, '\n'.join(message_history))
-    
-    is_generating_reply = False
-    return sent_message.text
+    return message.replace('\n', ' '*5)
 
 async def load_char(char_id: str) -> None:
     global character_id, character_name
