@@ -77,7 +77,7 @@ async def on_message(message: discord.Message) -> None:
         elif msg.content.endswith(MESSAGE_SUFFIX):
             previous_messages.append(f'{character_name}: {msg.content.replace(MESSAGE_SUFFIX, "")}')
     
-    previous_messages.append('\nYou are now talking to: ' + message.author.name)
+    previous_messages.insert(0, '\nSend <no reply> if you don\'t want to reply')
     previous_messages = reversed(previous_messages)
     
     # Prevent the AI from overloading
@@ -87,8 +87,10 @@ async def on_message(message: discord.Message) -> None:
     while is_generating_reply:
         await sleep(.1)
     
-    print('Randomly waiting...')
-    await sleep(uniform(2.0, 6.0))
+    random_wait_time: float = uniform(2.0, 6.0)
+    
+    print(f'Randomly waiting for {random_wait_time}s...')
+    await sleep(random_wait_time)
     async with message.channel.typing():
         await message.reply(await reply_to_discord(message, previous_messages) + MESSAGE_SUFFIX)
 
