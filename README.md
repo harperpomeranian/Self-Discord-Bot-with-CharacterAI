@@ -7,7 +7,11 @@ Simple setup, just define your variables in .env and you'll be done!
 After cloning this repo onto your machine, follow these steps:
 
 ### Step 1: Install requirements
-Create a virtual environment, then install the required packages by running `pip install -r requirements.txt`
+
+1. Create a virtual environment<br/>
+    `python -m venv .`
+2. Install required packages<br/>
+    `pip install -r requirements.txt`
 
 ### Step 2: Get your CharacterAI Token
 
