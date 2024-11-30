@@ -42,7 +42,6 @@ async def on_message(message: discord.Message) -> None:
         
     # Whitelist
     if not (message.channel.id in whitelist or message.author.id in whitelist or server_id in whitelist) and whitelist:
-        print(message.channel.id, 'is not in whitelist...')
         return
     
     if message.author == dc_client.user or not (isinstance(message.channel, (discord.channel.DMChannel)) or dc_client.user in message.mentions):
@@ -74,7 +73,6 @@ async def on_message(message: discord.Message) -> None:
         return
     
     # Put the history loading here so the AI won't get confused
-    print(f'Loading History of {message.channel.name}')
     previous_messages: list[str] = []
     async for msg in message.channel.history(limit=20):
         if msg.content.endswith(MESSAGE_SUFFIX) and msg.author == dc_client.user:
@@ -91,14 +89,10 @@ async def on_message(message: discord.Message) -> None:
     previous_messages = reversed(previous_messages)
     
     # Prevent the AI from overloading
-    if is_generating_reply:
-        print(f'Waiting for my turn...')
-        
     while is_generating_reply:
         await sleep(.1)
     
     random_wait_time: float = uniform(2.0, 6.0)
-    print(f'Randomly waiting for {random_wait_time}s...')
     await sleep(random_wait_time)
     
     is_generating_reply = True
@@ -107,7 +101,6 @@ async def on_message(message: discord.Message) -> None:
         cai_response: str = await reply_to_discord(message, previous_messages)
         
         if '<no reply>' in cai_response:
-            print('No reply')
             return
         
         try:
@@ -118,8 +111,6 @@ async def on_message(message: discord.Message) -> None:
     is_generating_reply = False
 
 async def reply_to_discord(message: discord.Message, message_history: list[str]) -> str:
-    print(f'Replying to `{message.content}`...')
-    
     new_chat, _ = await cai_chat.new_chat(character_id, cai_me.id)
     await sleep(1)  # Prevent `comment` problem
     sent_message = await cai_chat.send_message(character_id, new_chat.chat_id, '\n'.join(message_history))
@@ -164,6 +155,8 @@ def load_configuration() -> None:
     
     if file_exists('whitelist.json'):
         whitelist = json.load(open('whitelist.json', 'r'))
+        print('Loaded configuration.')
+    
 
 async def main() -> None:
     global cai_client, cai_chat, cai_me, character_name
