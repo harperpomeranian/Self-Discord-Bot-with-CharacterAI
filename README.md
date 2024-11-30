@@ -2,7 +2,47 @@
 
 Simple setup, just define your variables in .env and you'll be done!
 
-## What the .env file must look like
+## Installation and Usage
+
+After cloning this repo onto your machine, follow these steps:
+
+### Step 1: Install requirements
+Install the required packages by running `pip install -r requirements.txt`
+
+### Step 2: Get your CharacterAI Token
+
+1. Run [get_character_ai_token.py](./get_character_ai_token.py) and follow the instructions.
+2. Copy your token and paste it into your `.env` file
+
+### Step 3: Get your Discord token
+
+1. Open Discord on your browser, make sure you're logged in.
+2. Open Developer tools by clicking F12 or right-clicking on the page and selecting "Inspect".
+3. Run this code in the console:
+    ```javascript
+    // From: https://stackoverflow.com/a/69868564/23834759
+
+    (webpackChunkdiscord_app.push([[''],{},e=>{m=[];for(let c in e.c)m.push(e.c[c])}]),m).find(m=>m?.exports?.default?.getToken!==void 0).exports.default.getToken()
+    ```
+4. Copy your token then paste it into your `.env` file
+
+### Step 4: Get your CharacterAI bot's ID
+
+1. Visit [old.character.ai](https://old.character.ai) and login. Go to your bot and copy the bot's ID from the url.
+    > **Example**
+    >
+    > **Url**: https://character.ai/chat/_20YpNNtOgwmdCTaCc-BrHvVdH09DimZDGWX62PyxJ8<br/>
+    > **Bot ID**: _20YpNNtOgwmdCTaCc-BrHvVdH09DimZDGWX62PyxJ8
+2. Save the Bot ID in the `.env` file
+
+### Step 5: Run the bot
+
+- This is the final step
+- Run [main.py](./main.py) and wait for the bot to start!
+
+### More: What the .env file must look like
+
+Get your discord token, character AI token, and your character AI's bot id. Then put them all in a `.env` file in the root directory.
 
 ```env
 DISCORD_TOKEN="<Your Discord Token>"

@@ -1,9 +1,9 @@
 from characterai import sendCode, authUser
 
 def main():
-    email = input('YOUR EMAIL: ')
+    email = input('C.AI YOUR EMAIL: ')
     sendCode(email)
-    link = input('LOGIN LINK IN MAIL: ')
+    link = input('Login link from email (Do NOT click the link): ')
     token = authUser(link, email)
 
     print(f'YOUR TOKEN: {token}')
