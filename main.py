@@ -11,6 +11,7 @@ from asyncio import run, create_task, sleep
 from os.path import exists as file_exists
 from random import uniform
 
+# Clients
 dc_client = discord.Client()
 cai_client = None
 
@@ -22,7 +23,7 @@ cai_me = None
 
 # Other
 is_generating_reply = False
-server_or_channel_whitelist = []
+whitelist = []
 
 # Be noteful when changing this
 MESSAGE_SUFFIX = '\n-# This message was made with AI'
@@ -33,12 +34,15 @@ async def on_ready() -> None:
 
 @dc_client.event
 async def on_message(message: discord.Message) -> None:
-    global character_id, character_name, server_or_channel_whitelist
+    global character_id, character_name, whitelist, is_generating_reply
     
+    server_id: int = 0
+    if message.guild:
+        server_id = message.guild.id
+        
     # Whitelist
-    whitelist_equiv = message.channel.id if not message.guild else message.guild.id
-    if whitelist_equiv not in server_or_channel_whitelist and len(server_or_channel_whitelist) > 0:
-        print(whitelist_equiv, 'is not in whitelist...')
+    if not (message.channel.id in whitelist or message.author.id in whitelist or server_id in whitelist) and whitelist:
+        print(message.channel.id, 'is not in whitelist...')
         return
     
     if message.author == dc_client.user or not (isinstance(message.channel, (discord.channel.DMChannel)) or dc_client.user in message.mentions):
@@ -66,6 +70,7 @@ async def on_message(message: discord.Message) -> None:
             await message.delete()
         if reply_message:
             await reply_message.delete()
+        
         return
     
     # Put the history loading here so the AI won't get confused
@@ -93,27 +98,32 @@ async def on_message(message: discord.Message) -> None:
         await sleep(.1)
     
     random_wait_time: float = uniform(2.0, 6.0)
-    
     print(f'Randomly waiting for {random_wait_time}s...')
     await sleep(random_wait_time)
+    
+    is_generating_reply = True
+    
     async with message.channel.typing():  # TODO: Update somehow
         cai_response: str = await reply_to_discord(message, previous_messages)
+        
         if '<no reply>' in cai_response:
             print('No reply')
             return
-        await message.reply(cai_response + MESSAGE_SUFFIX)
+        
+        try:
+            await message.reply(cai_response + MESSAGE_SUFFIX)
+        except Exception:
+            pass
+        
+    is_generating_reply = False
 
 async def reply_to_discord(message: discord.Message, message_history: list[str]) -> str:
-    global is_generating_reply
-    
-    is_generating_reply = True
     print(f'Replying to `{message.content}`...')
     
     new_chat, _ = await cai_chat.new_chat(character_id, cai_me.id)
-    await sleep(.5)  # Prevent `comment` problem
+    await sleep(1)  # Prevent `comment` problem
     sent_message = await cai_chat.send_message(character_id, new_chat.chat_id, '\n'.join(message_history))
-    
-    is_generating_reply = False
+
     return sent_message.text
 
 async def fix_message_content(message: str) -> str:
@@ -150,10 +160,10 @@ async def load_char(char_id: str) -> None:
     character_id = char_id
 
 def load_configuration() -> None:
-    global server_or_channel_whitelist
+    global whitelist
     
     if file_exists('whitelist.json'):
-        server_or_channel_whitelist = json.load(open('whitelist.json', 'r'))
+        whitelist = json.load(open('whitelist.json', 'r'))
 
 async def main() -> None:
     global cai_client, cai_chat, cai_me, character_name
