@@ -7,7 +7,7 @@ Simple setup, just define your variables in .env and you'll be done!
 After cloning this repo onto your machine, follow these steps:
 
 ### Step 1: Install requirements
-Install the required packages by running `pip install -r requirements.txt`
+Create a virtual environment, then install the required packages by running `pip install -r requirements.txt`
 
 ### Step 2: Get your CharacterAI Token
 
@@ -58,6 +58,11 @@ There's some built-in custom commands that I've added, but you can remove them o
     - Changes the current bot
 - `-!refresh`
     - Refreshes configuration (whitelist)
+
+## Where EXE?
+
+- The bot is a python script, so you'll need to run it with python
+- And plus, it's simple enough to understand the steps to run this
 
 <hr/>
 
